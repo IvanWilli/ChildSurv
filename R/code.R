@@ -1,5 +1,5 @@
-# function and graphs for paper "Mortality change and its impact on child survival"
-# I. Williams & Diego Alburez
+# function and graphs for paper "Mortality change and offspring survival for women in stable populations"
+# I. Williams & Diego Alburez-Gutierrez
 
 # libraries
 library(wpp2019)
@@ -18,10 +18,7 @@ lx_fun <- function(data, age){
 
 ### function to calculate all the measures
 CS_results <- function(LA, country, period, a){   # LA is the data base
-  
-  # example
-    # country = "Brazil"; period = "1970-1975"; a = 70
-  
+
   # filter country
   country = LA %>% filter(name == country, 
                           Period==period)%>% 
@@ -110,7 +107,8 @@ asfr_paises_LA <- percentASFR %>% gather(Period, asfr, -name, -country_code, -ag
                   select(-age) %>% 
                   filter(country_code %in% paises_LA_seleccion)
 
-# lt data must be downloaded manually (maybe too heavy for CRAN package)
+# female life table data was downloaded manually (too heavy)
+# from https://population.un.org/wpp2019/Download/Standard/Mortality/
 lt_paises_LA <- readxl::read_xlsx("Data/WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.xlsx", 
                                   sheet = 1, range = "A17:T77381") %>% 
                   rename(country_code=5,
@@ -172,7 +170,7 @@ LA$name[LA$name == "Bolivia (Plurinational State of)"] = "Bolivia"
 
 # get results for every country/period/age 
 CS_outs <- as.data.frame(expand.grid(name = unique(LA$name),
-                                     Age = c(20,30,40,50,60),
+                                     Age = c(20,30,40,50,60,70),
                                      Period = unique(LA$Period))) %>% 
                                      mutate(Year = as.integer(substr(Period, 1, 4)) + 2.5)
 for(i in 1:nrow(CS_outs)){
@@ -186,16 +184,17 @@ for(i in 1:nrow(CS_outs)){
 # get Ch Ch Ch Changes ---------------------------------------------------------
 # biiiig loop, could be optimized with map/purr
 # delta changes
-deltas <- c(.00001, .0001, 0.001, .01)
+deltas <- c(.0001, .0002, 0.003)
 CS_change_app <- as.data.frame(expand.grid(
                                 name = unique(LA$name),
-                                Age = c(20,30,40,50,60),
+                                Age = c(20,30,40,50,60,70),
                                 Period = unique(LA$Period),
                                 delta = deltas))
 
 for(i in 1:nrow(CS_change_app)){
         # loop
-        # i = 1
+        # i = 116
+        print(i)
         country = CS_change_app[i,1]
         period = CS_change_app[i,3]
         age = CS_change_app[i,2]
@@ -263,10 +262,14 @@ CS_change_app <- CS_change_app %>% rename(change_obs_abs = 5,
 library(latex2exp)
 
 # Reverse the order as follow
+table(CS_change_app$delta)
 CS_change_app$delta <- factor(CS_change_app$delta)
+levels(CS_change_app$delta)
 # Or specify the factor levels in the order you want
-CS_change_app$delta <- factor(CS_change_app$delta, 
-                              levels = c("1e-05", "1e-04", "0.001", "0.01" ))
+CS_change_app$delta2 <- factor(CS_change_app$delta, 
+                              levels = c(".0001", ".0002", ".003"))
+                              # levels = c("1e-05", "1e-04", "0.001", "0.01" ))
+table(CS_change_app$delta,CS_change_app$delta2,useNA = "ifany")
 
 # change abs empirical vs aproximation
 pdf("R/change_app.pdf")
@@ -276,10 +279,11 @@ pdf("R/change_app.pdf")
   geom_abline(slope=1, intercept = 0) +
   scale_x_continuous("Empirical") +
   scale_y_continuous("Approximated") +
-  scale_color_discrete("Change") +
+  # scale_color_discrete("Change") +
   theme_classic() +
   theme(legend.position="bottom"
         ,text = element_text(size=15))+
+  scale_color_discrete(name="Change", labels = c(".0001", ".0002", ".003"))+
   facet_wrap(~Age)
 dev.off()
 
@@ -308,7 +312,7 @@ CS_app_30 <- ggplot(CS_outs %>% filter(Age == age, name!="Latin America and the 
   geom_hline(yintercept = 0, color="grey", linetype = 2) +
   theme_classic() +
   theme(legend.position = "none",text = element_text(size=15)) +
-  labs(y = "%", x=TeX("CS_{30}"))+
+  labs(y = "%", x=TeX("D(30)"))+
   ylim(-2, 2)
 age = 40
 CS_app_40 <- ggplot(CS_outs %>% filter(Age == age, name!="Latin America and the Caribbean"), 
@@ -321,7 +325,7 @@ CS_app_40 <- ggplot(CS_outs %>% filter(Age == age, name!="Latin America and the 
   geom_hline(yintercept = 0, color="grey", linetype = 2) +
   theme_classic() +
   theme(legend.position = "none",text = element_text(size=15)) +
-  labs(y = "%", x=TeX("CS_{40}"))+
+  labs(y = "%", x=TeX("D(40)"))+
   ylim(-2, 2)
 age = 50
 CS_app_50 <- ggplot(CS_outs %>% filter(Age == age, name!="Latin America and the Caribbean"), 
@@ -334,7 +338,7 @@ CS_app_50 <- ggplot(CS_outs %>% filter(Age == age, name!="Latin America and the 
   geom_hline(yintercept = 0, color="grey", linetype = 2) +
   theme_classic() +
   theme(legend.position = "none",text = element_text(size=15)) +
-  labs(y = "%", x=TeX("CS_{50}"))+
+  labs(y = "%", x=TeX("D(50)"))+
   ylim(-2, 2)
 Guate_lt <- LA %>% filter(name=="Guatemala") %>% ggplot() +
   geom_line(aes(x=x, y=lx/100000, color=Period)) +

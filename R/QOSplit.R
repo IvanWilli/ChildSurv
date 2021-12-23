@@ -1,8 +1,9 @@
+# took from:
+
 ## Michalski AI, Grigoriev P, Gorlishchev VP  ##
-
 ## MPIDR Technical Report ##
-
 ## 22.11.2017 ##
+## https://www.demogr.mpg.de/papers/technicalreports/tr-2018-002.pdf ##
 
 ## Splitting Fx (age-specific fertility rates) 
 ## using quadratic optimization (QO) method  (HFD data) ##
@@ -48,7 +49,6 @@ QOSplit<-function(Fx,L,AgeInt){
   aux[aux<0]<-0   ## extremely small negative values can be neglected and treated as '0's 
   
   solutionN<-round(aux,8)
-  #OUT<-rbind(OUT,solutionN)
   Age<-L[1]+c(1:sum(AgeInt))-1
   out<-as.data.frame(cbind(Age,solutionN))
   names(out)<-c("Age","ASFR")
